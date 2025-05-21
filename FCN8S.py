@@ -11,6 +11,9 @@ import random
 import time
 import torch.nn.functional as F
 from PIL import Image
+import os
+import logging
+from datetime import datetime
 
 class FCN8s(nn.Module):
     def __init__(self, num_classes):
@@ -275,7 +278,28 @@ def save_predictions(model, loader, device, save_dir='results'):
         plt.savefig(f'{save_dir}/comparison_{i}.png')
         plt.close(fig)
 
+import os
+import logging
+from datetime import datetime
+
 if __name__ == "__main__":
+    # 创建带日期格式的文件夹
+    current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    save_dir = f'results_{current_time}'
+    os.makedirs(save_dir, exist_ok=True)
+
+    # 设置日志记录
+    log_file = os.path.join(save_dir, 'training.log')
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(log_file),
+            logging.StreamHandler()
+        ]
+    )
+    logger = logging.getLogger()
+
     set_seed(42)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     num_classes = 21
@@ -285,9 +309,6 @@ if __name__ == "__main__":
     weights[0] = 0.1  # 背景类别权重为0.1，其余为1
     weights = weights.to(device)
     criterion = nn.CrossEntropyLoss(ignore_index=255, weight=weights)
-    # optimizer = optim.Adam(model.parameters(), lr=1e-4)
-    #optimizer = torch.optim.SGD(model.parameters(), lr=1e-3, momentum=0.9, weight_decay=5e-4)
-    # 或
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=5e-4)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
     start_time = time.time()
@@ -296,12 +317,12 @@ if __name__ == "__main__":
         train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device, epoch)
         val_loss, miou = validate(model, val_loader, criterion, device, epoch, num_classes)
         scheduler.step()  # 每个epoch结束后调用
-        print(f"Epoch {epoch+1}: Train Loss={train_loss:.4f}, Val Loss={val_loss:.4f}, mIoU={miou:.4f}")
+        logger.info(f"Epoch {epoch+1}: Train Loss={train_loss:.4f}, Val Loss={val_loss:.4f}, mIoU={miou:.4f}")
 
     final_val_loss, final_miou = validate(model, val_loader, criterion, device, epoch='final', num_classes=num_classes)
-    print(f"Final Validation Loss: {final_val_loss:.4f}, Final mIoU: {final_miou:.4f}")
-    save_predictions(model, val_loader, device, save_dir='results')
+    logger.info(f"Final Validation Loss: {final_val_loss:.4f}, Final mIoU: {final_miou:.4f}")
+    save_predictions(model, val_loader, device, save_dir=save_dir)
 
     end_time = time.time()
     total_time = end_time - start_time
-    print(f"Total Training Time: {total_time:.2f} seconds")
+    logger.info(f"Total Training Time: {total_time:.2f} seconds")
