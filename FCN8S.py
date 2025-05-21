@@ -15,6 +15,7 @@ import os
 import logging
 from datetime import datetime
 
+
 class FCN8s(nn.Module):
     def __init__(self, num_classes):
         super(FCN8s, self).__init__()
@@ -278,14 +279,12 @@ def save_predictions(model, loader, device, save_dir='results'):
         plt.savefig(f'{save_dir}/comparison_{i}.png')
         plt.close(fig)
 
-import os
-import logging
-from datetime import datetime
+
 
 if __name__ == "__main__":
     # 创建带日期格式的文件夹
     current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    save_dir = f'results_{current_time}'
+    save_dir = f'results/results_{current_time}'
     os.makedirs(save_dir, exist_ok=True)
 
     # 设置日志记录
@@ -301,7 +300,7 @@ if __name__ == "__main__":
     logger = logging.getLogger()
 
     set_seed(42)
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
     num_classes = 21
     model = FCN8s(num_classes=num_classes).to(device)
     train_loader, val_loader = get_voc_loaders(batch_size=32, img_size=256, root='../DeepLearn2/data')
@@ -315,7 +314,7 @@ if __name__ == "__main__":
 
     for epoch in range(200):
         train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device, epoch)
-        val_loss, miou = validate(model, val_loader, criterion, device, epoch, num_classes)
+        val_loss, miou = validate(model, val_loader, criterion, device, epoch, num_classes,save_dir)
         scheduler.step()  # 每个epoch结束后调用
         logger.info(f"Epoch {epoch+1}: Train Loss={train_loss:.4f}, Val Loss={val_loss:.4f}, mIoU={miou:.4f}")
 
