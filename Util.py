@@ -70,7 +70,11 @@ def validate(model, loader, criterion, device, epoch, num_classes=21, save_dir='
             imgs = imgs.to(device)
             masks = masks.to(device).long()
             outputs = model(imgs)
-            loss = criterion(outputs, masks.squeeze(1))
+            # 判断模型类型并提取正确的输出
+            if isinstance(model, torchvision.models.segmentation.DeepLabV3):
+                loss = criterion(outputs['out'], masks.squeeze(1))
+            else:
+                loss = criterion(outputs, masks.squeeze(1))
             total_loss += loss.item()
             preds = torch.argmax(outputs, dim=1).cpu()
             print("preds unique:", torch.unique(preds))
