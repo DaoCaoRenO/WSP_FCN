@@ -6,11 +6,11 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
-
+import Util
 import DataSet
 
 # 检查设备
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 # 数据预处理
 transform = transforms.Compose([
@@ -77,7 +77,7 @@ best_loss = float("inf")
 for epoch in range(num_epochs):
     print(f"Epoch {epoch+1}/{num_epochs}")
     train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
-    val_loss = validate(model, val_loader, criterion, device)
+    val_loss = Util.validate(model, val_loader, criterion, device,epoch, num_classes=21, save_dir='results')
 
     print(f"Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
 
