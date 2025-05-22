@@ -5,3 +5,4 @@
 /.vs
 results_2025-05-21_19-33-27/training.log
 results/
+best_deeplabv3_voc.pth
