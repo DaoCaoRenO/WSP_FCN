@@ -12,6 +12,7 @@ from tqdm import tqdm
 import Util
 import DataSet
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torchvision.models.segmentation import DeepLabV3_ResNet50_Weights
 
 # 检查设备
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -36,7 +37,7 @@ transform = transforms.Compose([
 train_loader, val_loader = DataSet.get_voc_loaders(batch_size=8, img_size=256, root='../DeepLearn2/data')
 
 # 加载 DeepLabv3 模型
-model = deeplabv3_resnet50(pretrained=False)  # 使用 ResNet-50 作为 backbone
+model = deeplabv3_resnet50(weights=DeepLabV3_ResNet50_Weights.DEFAULT)
 model.classifier[4] = nn.Conv2d(256, 21, kernel_size=1)  # VOC 有 21 个类别
 model = model.to(device)
 
@@ -57,8 +58,7 @@ def train_one_epoch(model, dataloader, optimizer, criterion, device):
         loss = criterion(outputs, targets.long())
         loss.backward()
         optimizer.step()
-        scheduler.step(val_loss)
-
+       
         running_loss += loss.item()
     return running_loss / len(dataloader)
 
@@ -91,12 +91,14 @@ for epoch in range(num_epochs):
     epoch_time = time.time() - epoch_start
     print(f"Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Val mIoU: {val_miou:.4f}")
     print(f"Epoch {epoch+1} time: {epoch_time:.2f} seconds")
+     # 学习率调度器放在这里
+    scheduler.step(val_loss)
 
-    # 保存最优模型
-    if val_loss < best_loss:
-        best_loss = val_loss
-        torch.save(model.state_dict(), "best_deeplabv3_voc.pth")
-        print("Model saved!")
+    # # 保存最优模型
+    # if val_loss < best_loss:
+    #     best_loss = val_loss
+    #     torch.save(model.state_dict(), "best_deeplabv3_voc.pth")
+    #     print("Model saved!")
 
 total_time = time.time() - total_start
 print(f"Training complete! Total time: {total_time:.2f} seconds")

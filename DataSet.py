@@ -22,11 +22,15 @@ def get_voc_loaders(batch_size=4, img_size=256, root='../DeepLearn2/data'):
             self.i, self.j, self.h, self.w = 0, 0, img_size, img_size
             
         def __call__(self, image, mask):
-        # 随机裁剪
+         # 先resize到更大尺寸（如 280x320 或 300x300）
+            resize_size = (280, 320)  # 或 (300, 300)，确保比crop大
+            image = transforms.functional.resize(image, resize_size, interpolation=transforms.InterpolationMode.BILINEAR)
+            mask = transforms.functional.resize(mask, resize_size, interpolation=transforms.InterpolationMode.NEAREST)
+
+            # 再随机裁剪
             i, j, h, w = transforms.RandomCrop.get_params(image, output_size=(self.img_size, self.img_size))
             image = transforms.functional.crop(image, i, j, h, w)
             mask = transforms.functional.crop(mask, i, j, h, w)
-
             # 随机水平翻转
             if torch.rand(1) < 0.5:
                 image = transforms.functional.hflip(image)
