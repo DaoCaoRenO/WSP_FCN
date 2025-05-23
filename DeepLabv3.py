@@ -74,7 +74,7 @@ def validate(model, dataloader, criterion, device):
     return running_loss / len(dataloader)
 
 # 训练循环
-num_epochs = 20
+num_epochs = 200
 best_loss = float("inf")
 save_path =  f"results/results_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 print=Util.logging_setup(save_path)

@@ -25,27 +25,33 @@ def get_voc_loaders(batch_size=4, img_size=256, root='../DeepLearn2/data'):
             # 调整大小
             image = transforms.functional.resize(image, (self.img_size + 32, self.img_size + 32))
             mask = transforms.functional.resize(mask, (self.img_size + 32, self.img_size + 32), 
-                                              interpolation=transforms.InterpolationMode.NEAREST)
+                                            interpolation=transforms.InterpolationMode.NEAREST)
             
-            # 随机裁剪 - 只在第一次调用时确定裁剪参数
-            if self.h == self.img_size:  # 用这个作为标记判断是否第一次调用
-                self.i, self.j, self.h, self.w = transforms.RandomCrop.get_params(
-                    image, output_size=(self.img_size, self.img_size))
-                
-            # 对图像和mask应用相同的裁剪
+            # 随机裁剪
+            self.i, self.j, self.h, self.w = transforms.RandomCrop.get_params(
+                image, output_size=(self.img_size, self.img_size))
             image = transforms.functional.crop(image, self.i, self.j, self.h, self.w)
             mask = transforms.functional.crop(mask, self.i, self.j, self.h, self.w)
             
-            # 随机水平翻转 - 只在第一次调用时决定是否翻转
-            if not hasattr(self, 'flip_decided'):
-                self.flip = torch.rand(1) < 0.5
-                self.flip_decided = True
-                
-            # 对图像和mask应用相同的翻转
-            if self.flip:
+            # 随机水平翻转
+            if torch.rand(1) < 0.5:
                 image = transforms.functional.hflip(image)
                 mask = transforms.functional.hflip(mask)
-                
+            
+            # 随机垂直翻转
+            if torch.rand(1) < 0.5:
+                image = transforms.functional.vflip(image)
+                mask = transforms.functional.vflip(mask)
+            
+            # 随机旋转（-10~10度）
+            angle = float(torch.empty(1).uniform_(-10, 10))
+            image = transforms.functional.rotate(image, angle, interpolation=transforms.InterpolationMode.BILINEAR)
+            mask = transforms.functional.rotate(mask, angle, interpolation=transforms.InterpolationMode.NEAREST)
+            
+            # 只对image做颜色抖动
+            color_jitter = transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)
+            image = color_jitter(image)
+            
             # 图像特有变换：转tensor和归一化
             image = transforms.functional.to_tensor(image)
             image = normalize(image)
