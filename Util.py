@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import transforms, models
+import torchvision
 from torchvision.datasets import VOCSegmentation
 import numpy as np
 import matplotlib.pyplot as plt
@@ -70,13 +71,19 @@ def validate(model, loader, criterion, device, epoch, num_classes=21, save_dir='
             imgs = imgs.to(device)
             masks = masks.to(device).long()
             outputs = model(imgs)
+            
             # 判断模型类型并提取正确的输出
             if isinstance(model, torchvision.models.segmentation.DeepLabV3):
-                loss = criterion(outputs['out'], masks.squeeze(1))
+                output = outputs['out']  # 提取主要输出
+                loss = criterion(output, masks.squeeze(1))
             else:
-                loss = criterion(outputs, masks.squeeze(1))
+                output = outputs  # 直接使用输出
+                loss = criterion(output, masks.squeeze(1))
+            
             total_loss += loss.item()
-            preds = torch.argmax(outputs, dim=1).cpu()
+            
+            # 计算预测结果
+            preds = torch.argmax(output, dim=1).cpu()  # 使用主要输出
             print("preds unique:", torch.unique(preds))
             all_preds.append(preds)
             all_masks.append(masks.cpu().squeeze(1))
@@ -88,6 +95,7 @@ def validate(model, loader, criterion, device, epoch, num_classes=21, save_dir='
                 for i in range(num_to_save):
                     vis_imgs.append(imgs[i].cpu())
                     vis_masks.append(masks[i].cpu().squeeze(0))  # 去掉通道维度
+               
                     vis_preds.append(preds[i])
             
             print(f"Epoch {epoch_str}, Validation Batch {batch_idx+1}/{len(loader)} Loss: {loss.item():.4f}")

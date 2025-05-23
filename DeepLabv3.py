@@ -1,3 +1,4 @@
+from datetime import datetime
 import torch
 import torchvision
 from torchvision import transforms
@@ -77,9 +78,10 @@ best_loss = float("inf")
 for epoch in range(num_epochs):
     print(f"Epoch {epoch+1}/{num_epochs}")
     train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
-    val_loss = Util.validate(model, val_loader, criterion, device,epoch, num_classes=21, save_dir='results')
 
-    print(f"Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
+    save_path =  f"results_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    val_loss, val_miou = Util.validate(model, val_loader, criterion, device, epoch, num_classes=21, save_dir=save_path)
+    print(f"Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Val mIoU: {val_miou:.4f}")
 
     # 保存最优模型
     if val_loss < best_loss:
