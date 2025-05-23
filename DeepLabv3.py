@@ -1,4 +1,6 @@
 from datetime import datetime
+import os
+import time
 import torch
 import torchvision
 from torchvision import transforms
@@ -11,7 +13,7 @@ import Util
 import DataSet
 
 # 检查设备
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # 数据预处理
 transform = transforms.Compose([
@@ -33,7 +35,7 @@ transform = transforms.Compose([
 train_loader, val_loader = DataSet.get_voc_loaders(batch_size=8, img_size=256, root='../DeepLearn2/data')
 
 # 加载 DeepLabv3 模型
-model = deeplabv3_resnet50(pretrained=True)  # 使用 ResNet-50 作为 backbone
+model = deeplabv3_resnet50(pretrained=False)  # 使用 ResNet-50 作为 backbone
 model.classifier[4] = nn.Conv2d(256, 21, kernel_size=1)  # VOC 有 21 个类别
 model = model.to(device)
 
@@ -74,14 +76,19 @@ def validate(model, dataloader, criterion, device):
 # 训练循环
 num_epochs = 20
 best_loss = float("inf")
+save_path =  f"results/results_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+print=Util.logging_setup(save_path)
+# os.makedirs(save_path, exist_ok=True)
 
+total_start = time.time()
 for epoch in range(num_epochs):
+    epoch_start = time.time()
     print(f"Epoch {epoch+1}/{num_epochs}")
-    train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)
-
-    save_path =  f"results_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    train_loss = train_one_epoch(model, train_loader, optimizer, criterion, device)   
     val_loss, val_miou = Util.validate(model, val_loader, criterion, device, epoch, num_classes=21, save_dir=save_path)
+    epoch_time = time.time() - epoch_start
     print(f"Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Val mIoU: {val_miou:.4f}")
+    print(f"Epoch {epoch+1} time: {epoch_time:.2f} seconds")
 
     # 保存最优模型
     if val_loss < best_loss:
@@ -89,4 +96,5 @@ for epoch in range(num_epochs):
         torch.save(model.state_dict(), "best_deeplabv3_voc.pth")
         print("Model saved!")
 
-print("Training complete!")
+total_time = time.time() - total_start
+print(f"Training complete! Total time: {total_time:.2f} seconds")

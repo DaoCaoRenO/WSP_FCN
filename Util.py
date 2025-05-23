@@ -16,9 +16,12 @@ import os
 import logging
 from datetime import datetime
 
-def logging_setup(log_dir='logs'):
+def logging_setup(save_path):
       # 设置日志文件名，带时间戳
-    log_filename = f"log/train_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+    os.makedirs(save_path, exist_ok=True)  # 确保目录存在
+    log_filename = os.path.join(
+        save_path, f"train_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+    )
     logging.basicConfig(
         level=logging.INFO,
         format="%(message)s",
