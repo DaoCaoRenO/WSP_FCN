@@ -22,43 +22,35 @@ def get_voc_loaders(batch_size=4, img_size=256, root='../DeepLearn2/data'):
             self.i, self.j, self.h, self.w = 0, 0, img_size, img_size
             
         def __call__(self, image, mask):
-            # 调整大小
-            image = transforms.functional.resize(image, (self.img_size + 32, self.img_size + 32))
-            mask = transforms.functional.resize(mask, (self.img_size + 32, self.img_size + 32), 
-                                            interpolation=transforms.InterpolationMode.NEAREST)
-            
-            # 随机裁剪
-            self.i, self.j, self.h, self.w = transforms.RandomCrop.get_params(
-                image, output_size=(self.img_size, self.img_size))
-            image = transforms.functional.crop(image, self.i, self.j, self.h, self.w)
-            mask = transforms.functional.crop(mask, self.i, self.j, self.h, self.w)
-            
+        # 随机裁剪
+            i, j, h, w = transforms.RandomCrop.get_params(image, output_size=(self.img_size, self.img_size))
+            image = transforms.functional.crop(image, i, j, h, w)
+            mask = transforms.functional.crop(mask, i, j, h, w)
+
             # 随机水平翻转
             if torch.rand(1) < 0.5:
                 image = transforms.functional.hflip(image)
                 mask = transforms.functional.hflip(mask)
-            
+
             # 随机垂直翻转
             if torch.rand(1) < 0.5:
                 image = transforms.functional.vflip(image)
                 mask = transforms.functional.vflip(mask)
-            
-            # 随机旋转（-10~10度）
+
+            # 随机旋转
             angle = float(torch.empty(1).uniform_(-10, 10))
             image = transforms.functional.rotate(image, angle, interpolation=transforms.InterpolationMode.BILINEAR)
             mask = transforms.functional.rotate(mask, angle, interpolation=transforms.InterpolationMode.NEAREST)
-            
-            # 只对image做颜色抖动
+
+            # 颜色抖动
             color_jitter = transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)
             image = color_jitter(image)
-            
-            # 图像特有变换：转tensor和归一化
+
+            # 转tensor和归一化
             image = transforms.functional.to_tensor(image)
             image = normalize(image)
-            
-            # Mask变换：转numpy然后转tensor
             mask = torch.as_tensor(np.array(mask).copy())
-            
+
             return image, mask
     
     # 创建自定义VOC数据集类以使用联合变换

@@ -11,6 +11,7 @@ import torch.optim as optim
 from tqdm import tqdm
 import Util
 import DataSet
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 # 检查设备
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -42,7 +43,7 @@ model = model.to(device)
 # 定义损失函数和优化器
 criterion = nn.CrossEntropyLoss(ignore_index=255)  # 忽略标注为 255 的像素
 optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
-
+scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=8, verbose=True)
 # 训练和验证函数
 def train_one_epoch(model, dataloader, optimizer, criterion, device):
     model.train()
@@ -56,6 +57,7 @@ def train_one_epoch(model, dataloader, optimizer, criterion, device):
         loss = criterion(outputs, targets.long())
         loss.backward()
         optimizer.step()
+        scheduler.step(val_loss)
 
         running_loss += loss.item()
     return running_loss / len(dataloader)
