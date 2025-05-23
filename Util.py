@@ -87,7 +87,7 @@ def validate(model, loader, criterion, device, epoch, num_classes=21, save_dir='
             
             # 计算预测结果
             preds = torch.argmax(output, dim=1).cpu()  # 使用主要输出
-            print("preds unique:", torch.unique(preds))
+            # print("preds unique:", torch.unique(preds))
             all_preds.append(preds)
             all_masks.append(masks.cpu().squeeze(1))
             

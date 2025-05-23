@@ -41,7 +41,7 @@ model = model.to(device)
 
 # 定义损失函数和优化器
 criterion = nn.CrossEntropyLoss(ignore_index=255)  # 忽略标注为 255 的像素
-optimizer = optim.Adam(model.parameters(), lr=1e-4)
+optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
 
 # 训练和验证函数
 def train_one_epoch(model, dataloader, optimizer, criterion, device):
